@@ -1,49 +1,37 @@
 import streamlit as st
+import spacy
+from spacy import displacy
 import pandas as pd
 import base64
+from io import BytesIO
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from collections import Counter
-import sys
-import os
-import subprocess
 
-# Set up page configuration first
+# Load spaCy models
+@st.cache_resource
+def load_model(model_name):
+    return spacy.load(model_name)
+
+# Initialize the app
 st.set_page_config(page_title="Named Entity Recognition System", layout="wide")
 st.title("Named Entity Recognition System")
 
-# Import spacy
-import spacy
-from spacy import displacy
-
-# Function to download spacy model correctly on Streamlit Cloud
-@st.cache_resource
-def load_spacy_model(model_name):
-    try:
-        # Try loading the model
-        return spacy.load(model_name)
-    except OSError:
-        # If model isn't found, show error and instructions
-        st.error(f"Model {model_name} not found.")
-        st.info(f"Please select a different model or contact the app administrator.")
-        st.stop()
-
 # Sidebar for model selection and controls
 st.sidebar.title("Controls")
-# For Streamlit Cloud, we'll stick with the small model that should be pre-installed
-model_name = "en_core_web_sm"
-st.sidebar.info(f"Using model: {model_name}")
+model_name = st.sidebar.selectbox(
+    "Select spaCy Model",
+    ("en_core_web_sm", "en_core_web_md", "en_core_web_lg")
+)
 
-# Load the model
-with st.spinner(f"Loading model... please wait."):
-    try:
-        nlp = load_spacy_model(model_name)
-        st.sidebar.success(f"Model '{model_name}' loaded successfully!")
-    except Exception as e:
-        st.error(f"Error loading model: {str(e)}")
-        st.stop()
+# Try loading the model, with error handling
+try:
+    nlp = load_model(model_name)
+    st.sidebar.success(f"Model '{model_name}' loaded successfully!")
+except:
+    st.sidebar.error(f"Error: Model '{model_name}' not found. Please install it with 'python -m spacy download {model_name}'")
+    st.stop()
 
-# Rest of your application
 # Explanation of NER
 st.markdown("""
 ## What is Named Entity Recognition?
@@ -79,7 +67,7 @@ entity_colors = {
 # Input text area
 st.header("Enter Text for NER Analysis")
 text_input = st.text_area("Paste your text here:", height=150, 
-                         value="In January 2025, Microsoft Corporation announced a major acquisition of DataSphere Technologies for $8.5 billion, causing their stock to rise by 12% on the New York Stock Exchange. CEO Satya Nadella explained during a press conference at their headquarters in Redmond, Washington that this strategic move would help them compete with Google and Amazon in the artificial intelligence market.")
+                          value="Apple Inc. is planning to open a new office in New York City next January. CEO Tim Cook announced this during his visit to Boston last week.")
 
 # Process button
 if st.button("Analyze Text"):
@@ -151,6 +139,7 @@ if st.button("Analyze Text"):
                 st.markdown("Entity relationship visualization shows how entities appear in the document:")
                 
                 # Just displaying an entity cloud for simplicity
+                # In a more advanced implementation, you could use networkx for relationship graphs
                 entities = [ent.text for ent in doc.ents]
                 entity_types = [ent.label_ for ent in doc.ents]
                 
