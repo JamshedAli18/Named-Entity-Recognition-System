@@ -1,7 +1,7 @@
-streamlit==1.32.0
-spacy==3.7.4
-pandas==2.1.4
-matplotlib==3.8.2
+streamlit
+spacy
+pandas
+matplotlib
 
 # You'll also need to run:
 # python -m spacy download en_core_web_sm
